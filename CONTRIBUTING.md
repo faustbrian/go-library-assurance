@@ -10,8 +10,8 @@ PYTHONDONTWRITEBYTECODE=1 python3 tools/compatibility/check-selection.py
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/compatibility -p test_selection.py
 ```
 
-The adapter fetches the generic Python helper at Tools v2.2.0 source
-`f0dd7cc2ed25abdb513b6364d7e160bf4b37c21b`, verifying its exact SHA-256
+The adapter fetches the generic Python helper at immutable Tools source
+`0e8ff6fee42e88858069a6f6ae6f1080d95c5eae`, verifying its exact SHA-256
 before execution. It also verifies the v1.8.4 released compatibility-set and
 consumer/engineering catalog assets against their frozen release digests.
 Downloads have byte limits, a shared 90-second preparation deadline and
@@ -19,12 +19,27 @@ at-most-15-second network waits; a blocked read may outlast that deadline by
 one network wait. Failed fetches or digest mismatches are fatal, without a
 mutable-ref or cached fallback. Inputs remain in memory, not a mutable catalog.
 
-The existing Tools functions validate the current selection and render its
-direct requirements/import inventory. The adapter changes only the exact
-generated module header for this non-releasable scenario and checks the owned
-files without rewriting them. Indirect requirements retain the generic
-matcher's existing allowance. This check does **not** verify every selected
+The Tools functions validate the current selection and render its direct
+requirements/import inventory. The adapter maps only the scenario module
+identity and supplies the actual owner-relative generator path. Read-only checks
+require exact renderer source bytes, including its generated header; handwritten
+or stale headers are refused. Indirect requirements retain the generic matcher's
+existing allowance. This check does **not** verify every selected
 tag's current availability or certify successful scenario execution.
+
+To refresh the generated import file deliberately:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 tools/compatibility/check-selection.py --write
+PYTHONDONTWRITEBYTECODE=1 python3 tools/compatibility/check-selection.py
+```
+
+`--write` validates the same authenticated selection and existing direct
+requirements before replacing only `consumer_test.go`. It never rewrites
+`go.mod`, `go.sum`, selection or frozen catalogs. It requires bounded, regular,
+single-link input files and real scenario directories; symlinks and unsafe
+paths are refused. Keep the checkout stable during validation and writing:
+these guards do not provide a concurrent filesystem transaction.
 
 Only `scenarios/compatibility-consumer/selection.json` owns current selection;
 update it deliberately with reviewed public versions and exact source revisions.
@@ -80,8 +95,15 @@ not rebuild compositions. Cheap selection/refusal checks and changed-content
 secret scanning still run. The scanner is the same standard Gitleaks v8.30.1
 used by Tools, fetched as an exact SHA256-pinned release binary rather than
 compiled for every change. Required refuses failed, cancelled or missing
-applicable work. Generic selection and execution consume the immutable Tools
-helper source named in the workflow; they are not copied into this repository.
+applicable work. Source documentation is always mandatory: its separate CI job
+uses the pinned setup-golib action's explicit source bootstrap at Tools
+`0e8ff6fee42e88858069a6f6ae6f1080d95c5eae`, then runs
+`golib source-docs check --json`. Git-root discovery needs no `.golib.yaml` in
+this test-only harness. The job always invokes guarded cleanup of its exact
+owned source installation, including after a check failure; unexpected paths
+or aliased/nonregular contents fail closed rather than deleting foreign files.
+Generic selection and execution consume the immutable Tools helper source named
+in the workflow; they are not copied into this repository.
 
 The scenario module is not released or imported by ordinary libraries.
 Library-local test/security/release obligations remain with their owners;

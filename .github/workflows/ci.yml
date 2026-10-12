@@ -56,6 +56,7 @@ jobs:
           python3 tools/compatibility/check-selection.py
           python3 -m unittest discover -s tools/compatibility -p test_selection.py
           python3 -m unittest discover -s .github/scripts -p test_required.py
+          python3 -m unittest discover -s .github/scripts -p test_source_cleanup.py
           python3 -m unittest discover -s .github/scripts -p test_advisory.py
       - name: Select affected public scenarios
         id: scope
@@ -64,6 +65,34 @@ jobs:
           PUBLICATION_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
           CONSUMER_DIRECTORY: scenarios/compatibility-consumer
         run: python3 .tools/.github/scripts/select-compatibility-consumer.py
+
+  source-docs:
+    name: Source documentation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: faustbrian/go-library-tools
+          ref: 0e8ff6fee42e88858069a6f6ae6f1080d95c5eae
+          path: .golib-tooling
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - uses: faustbrian/go-library-tools/.github/actions/setup-golib@e8c0c51cc517dfede5475858bb417f0e7a21f39d
+        with:
+          source_bootstrap: 'true'
+          tooling_sha: 0e8ff6fee42e88858069a6f6ae6f1080d95c5eae
+      - name: Check tracked source documentation without framework metadata
+        run: golib source-docs check --json
+      - name: Remove exact owned source bootstrap workspace
+        if: always()
+        run: bash .github/scripts/cleanup-source-bootstrap.sh
 
   secrets:
     name: Changed-content secrets
@@ -156,7 +185,7 @@ jobs:
   required:
     name: Required
     if: always()
-    needs: [dependency-review, quality, secrets, scenarios]
+    needs: [dependency-review, quality, secrets, source-docs, scenarios]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -167,6 +196,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           QUALITY_RESULT: ${{ needs.quality.result }}
           SECRETS_RESULT: ${{ needs.secrets.result }}
+          SOURCE_DOCS_RESULT: ${{ needs.source-docs.result }}
           SCENARIOS_REQUIRED: ${{ needs.quality.outputs.required }}
           SCENARIOS_RESULT: ${{ needs.scenarios.result }}
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}

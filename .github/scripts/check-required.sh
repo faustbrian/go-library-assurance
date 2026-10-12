@@ -4,6 +4,7 @@
 set -euo pipefail
 test "${QUALITY_RESULT}" = success
 test "${SECRETS_RESULT}" = success
+test "${SOURCE_DOCS_RESULT}" = success
 case "${SCENARIOS_REQUIRED}" in
   true) test "${SCENARIOS_RESULT}" = success ;;
   false) test "${SCENARIOS_RESULT}" = skipped ;;

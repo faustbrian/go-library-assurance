@@ -11,9 +11,14 @@ SCRIPT = Path(__file__).with_name("check-required.sh")
 class RequiredTests(unittest.TestCase):
     def check(self, updates, success):
         environment = dict(os.environ, EVENT_NAME="push", QUALITY_RESULT="success",
-                           SECRETS_RESULT="success", SCENARIOS_REQUIRED="false",
+                           SECRETS_RESULT="success", SOURCE_DOCS_RESULT="success",
+                           SCENARIOS_REQUIRED="false",
                            SCENARIOS_RESULT="skipped", DEPENDENCY_REVIEW_RESULT="skipped")
-        environment.update(updates)
+        for key, value in updates.items():
+            if value is None:
+                environment.pop(key, None)
+            else:
+                environment[key] = value
         result = subprocess.run(["bash", str(SCRIPT)], env=environment,
                                 capture_output=True, timeout=5, check=False)
         self.assertEqual(result.returncode == 0, success, result.stderr.decode())
@@ -32,6 +37,13 @@ class RequiredTests(unittest.TestCase):
             for result in ("failure", "cancelled", "skipped", ""):
                 with self.subTest(key=key, result=result):
                     self.check({key: result}, False)
+
+    def test_source_documentation_is_always_mandatory(self):
+        self.check({"SOURCE_DOCS_RESULT": None}, False)
+        self.check({"SOURCE_DOCS_RESULT": "success"}, True)
+        for result in ("failure", "cancelled", "skipped", "", "unknown"):
+            with self.subTest(result=result):
+                self.check({"SOURCE_DOCS_RESULT": result}, False)
 
     def test_invalid_classification_cannot_hide_scenarios(self):
         for selected in ("", "unknown", "TRUE"):

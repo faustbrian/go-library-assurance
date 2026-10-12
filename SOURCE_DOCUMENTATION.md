@@ -38,22 +38,23 @@ crash recovery or external-service interoperability.
 
 ## Generated input and qualification boundaries
 
-`consumer_test.go` is the exact import rendering of the pinned Tools helper
-selected by [`check-selection.py`](tools/compatibility/check-selection.py).
-`selection.json` owns current choices; the helper owns rendering. The adapter
-validates the generated direct requirements and imports without rewriting them.
-Its existing direct `test_source != imports` comparison intentionally refuses
-even an extra header comment. The file currently has no generated-code header
-or local `go:generate` directive; adding one requires a reviewed producer change,
-not a hand edit or a relaxation of this integrity check. The generator identity,
-source digest and frozen catalog digests are recorded in that adapter.
+`consumer_test.go` is the exact import rendering of the authenticated Tools
+helper selected by [`check-selection.py`](tools/compatibility/check-selection.py).
+`selection.json` owns current choices; Tools source
+`0e8ff6fee42e88858069a6f6ae6f1080d95c5eae` owns the renderer. The adapter
+maps the scenario module identity and supplies the real relative producer path,
+`../../tools/compatibility/check-selection.py`. The generated header comes from
+that renderer, not a manually accepted prefix. The exact native source guard
+continues to reject stale imports and handwritten or wrong-producer headers.
 
-For selection changes, use the pinned helper's `current_consumer_inputs` and
-`render_clean_consumer` functions through the adapter's verified `load_inputs`
-boundary; retain the adapter's exact Tools-to-Assurance module-header mapping.
-The maintained [selection check](CONTRIBUTING.md#selection-and-bootstrap) is
-read-only, not a regeneration command. Do not call the helper's unrelated
-default main path or duplicate its policy here.
+The [local entrypoint](CONTRIBUTING.md#selection-and-bootstrap) checks by default
+and regenerates only `consumer_test.go` with explicit `--write`. Both routes use
+verified `load_inputs`, pure `current_consumer_inputs`/`render_clean_consumer`
+and the existing direct requirement matcher. Generation never changes direct
+requirements, selection, frozen release assets or their digests. It refuses
+unsafe directories, linked/nonregular/oversize files and dependency drift before
+writing. It assumes a stable checkout, not concurrent transactional replacement.
+Do not call the helper's unrelated default main path or duplicate its policy.
 
 The local bootstrap helper downloads only bounded, digest-verified public
 inputs before execution. A shared preparation deadline and bounded network
@@ -73,16 +74,24 @@ executable template bytes. These tests qualify the exercised compositions,
 not every library contract or platform. No module release or runtime-library
 changelog is applicable to this non-releasable harness.
 
-## Outstanding producer adoption
+## Objective source enforcement
 
-This harness intentionally has no `.golib.yaml`. The Tools source-docs route
-must use Git-root discovery rather than requiring library framework metadata.
-The candidate Git-only correction inventories this module's eleven tracked Go
-files and passes its objective strict check without configuration scaffolding;
-that local result is not final Tools CI, release or harness-CI adoption proof.
+This harness intentionally has no `.golib.yaml`. Its CI source-docs job checks
+tracked Go inputs through generic Git-root discovery. It checks out exact Tools
+source `0e8ff6fee42e88858069a6f6ae6f1080d95c5eae`, uses the authenticated
+setup-golib action's explicit `source_bootstrap: true` mode with Go 1.27.2,
+and runs `golib source-docs check --json`. No framework metadata or second
+installer is introduced. Existing scenario-selector/runner pins are unchanged.
 
-The producer-owned generated-header correction remains pending. Update this
-harness only through the verified renderer and its exact native guard once
-that producer change is delivered. A structurally passing test-source inventory
-does not discover this absent header's producer ownership, and maintained-file
-prose/token proof does not fulfill that dependency or qualify the complete goal.
+Required now demands a successful source-docs result even when composition
+scenarios are inapplicable. Missing, skipped, cancelled or failed documentation
+work cannot pass. The job always cleans its exact owned source-install workspace
+through prefix, directory and no-alias guards; unsafe foreign contents are
+refused, not recursively deleted.
+
+Local producer/refusal and aggregation/cleanup tests exercise these boundaries.
+Generating twice yields the actual producer header plus the unchanged import
+inventory; scenario assertions, direct/indirect requirements, Go minimum,
+selection and frozen authority remain unchanged. Local checks do not establish
+hosted source-bootstrap execution, platform composition results or remote CI.
+No runtime-library release or changelog is applicable to this harness.

@@ -10,12 +10,12 @@ import urllib.request
 
 
 ROOT = Path(__file__).resolve().parents[2]
-HELPER_SOURCE = "f0dd7cc2ed25abdb513b6364d7e160bf4b37c21b"
+HELPER_SOURCE = "0e8ff6fee42e88858069a6f6ae6f1080d95c5eae"
 HELPER_URL = (
     "https://raw.githubusercontent.com/faustbrian/go-library-tools/"
     + HELPER_SOURCE + "/tools/compatibility/generate.py"
 )
-HELPER_SHA256 = "855e30f170fb41b4c1fc2574d21d8526b611602eb8669c104fddcf666712c27a"
+HELPER_SHA256 = "fb3585b3e539cc179183e5fd431d3871a17d4960aa54eb9c0c0815e2eb08c6b1"
 ASSET_BASE = "https://github.com/faustbrian/go-library-tools/releases/download/v1.8.4/"
 ASSETS = {
     "compatibility-sets.json": "bc80555c2ac0d61010e83848f6e8f649a057624124a32bb4bab2fedbee229740",
@@ -104,34 +104,43 @@ def load_inputs():
     return helper, assets["compatibility-sets.json"], list(catalogs.values())
 
 
-def validate_selection(inputs, selection, go_mod, test_source):
+def render_selection(inputs, selection):
     # Only the module identity is adapted. Imports remain exact renderer bytes;
     # adding a manual comment or allowing a second selection source would drift.
     helper, sets, catalogs = inputs
     selected, catalogs = helper.current_consumer_inputs(
         sets, catalogs, selection, verify_public=False,
     )
-    generated, imports = helper.render_clean_consumer(selected, catalogs)
+    generated, imports = helper.render_clean_consumer(
+        selected, catalogs, generator_path="../../tools/compatibility/check-selection.py",
+    )
     if not generated.startswith(TOOLS_HEADER):
         raise ValueError("published helper module header changed")
     generated = ASSURANCE_HEADER + generated[len(TOOLS_HEADER):]
-    if not helper.clean_consumer_go_mod_matches(go_mod, generated):
+    return len(selected["modules"]), generated, imports
+
+
+def validate_selection(inputs, selection, go_mod, test_source):
+    count, generated, imports = render_selection(inputs, selection)
+    if not inputs[0].clean_consumer_go_mod_matches(go_mod, generated):
         raise ValueError("current scenario is stale: go.mod")
     if test_source != imports:
         raise ValueError("current scenario is stale: consumer_test.go")
-    return len(selected["modules"])
+    return count
 
 
 def read_owned(name, limit):
     # Admit bounded regular input from a stable checkout. These checks precede
     # open but do not provide an atomic snapshot against concurrent replacement.
+    if name not in ("selection.json", "go.mod", "consumer_test.go"):
+        raise ValueError("unknown scenario input")
     directory = ROOT / "scenarios/compatibility-consumer"
     for parent in (ROOT / "scenarios", directory):
         if not stat.S_ISDIR(parent.lstat().st_mode):
             raise ValueError("unsafe scenario directory")
     path = directory / name
     info = path.lstat()
-    if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or info.st_size > limit:
         raise ValueError("missing or unsafe scenario input")
     with path.open("rb") as handle:
         body = handle.read(limit + 1)
@@ -140,15 +149,33 @@ def read_owned(name, limit):
     return body
 
 
-def main():
-    if len(sys.argv) != 1:
-        raise ValueError("usage: python3 tools/compatibility/check-selection.py")
-    count = validate_selection(
-        load_inputs(), decode_json(read_owned("selection.json", 65536)),
-        read_owned("go.mod", 1024 * 1024).decode(),
-        read_owned("consumer_test.go", 1024 * 1024).decode(),
-    )
-    print(f"current scenario selection matches: {count} public modules")
+def maintain_scenario(inputs, *, write=False):
+    # Validate every bounded owned input and direct dependency before any write.
+    # --write replaces only the generated import source, never requirements,
+    # selection or frozen inputs. A stable checkout is required during this call.
+    selection = decode_json(read_owned("selection.json", 65536))
+    go_mod = read_owned("go.mod", 1024 * 1024).decode()
+    test_source = read_owned("consumer_test.go", 1024 * 1024).decode()
+    count, generated, imports = render_selection(inputs, selection)
+    if not inputs[0].clean_consumer_go_mod_matches(go_mod, generated):
+        raise ValueError("current scenario is stale: go.mod")
+    if write:
+        (ROOT / "scenarios/compatibility-consumer/consumer_test.go").write_text(
+            imports, encoding="utf-8",
+        )
+    elif test_source != imports:
+        raise ValueError("current scenario is stale: consumer_test.go")
+    return count
+
+
+def main(arguments=None):
+    arguments = sys.argv[1:] if arguments is None else arguments
+    if arguments not in ([], ["--write"]):
+        raise ValueError("usage: python3 tools/compatibility/check-selection.py [--write]")
+    write = arguments == ["--write"]
+    count = maintain_scenario(load_inputs(), write=write)
+    operation = "regenerated imports for" if write else "selection matches:"
+    print(f"current scenario {operation} {count} public modules")
 
 
 if __name__ == "__main__":
