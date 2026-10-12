@@ -1,3 +1,5 @@
+// These scenarios check public configuration and borrowed-resource lifetime;
+// they never create a database connection or qualify SQL/transaction behavior.
 package compatibilityconsumer_test
 
 import (
@@ -83,11 +85,15 @@ func TestPublicPostgresBorrowedServiceLifecycle(t *testing.T) {
 	}
 }
 
+// borrowedPostgresResource models a caller-owned pool with sequential counters.
+// The adapter may probe it while active but must leave closing to its owner;
+// this double is not a concurrency or real-pool shutdown test.
 type borrowedPostgresResource struct {
 	pings  int
 	closes int
 }
 
+// Ping counts only uncanceled probes; no network or real readiness work occurs.
 func (pool *borrowedPostgresResource) Ping(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -96,6 +102,7 @@ func (pool *borrowedPostgresResource) Ping(ctx context.Context) error {
 	return nil
 }
 
+// Close exposes an ownership violation without managing an actual database pool.
 func (pool *borrowedPostgresResource) Close(context.Context) error {
 	pool.closes++
 	return nil

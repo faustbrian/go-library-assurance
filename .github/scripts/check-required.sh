@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Quality owns classification. A false classification expects a skipped scenario
+# job, not a manufactured success; selected, missing or cancelled work stays fatal.
 set -euo pipefail
 test "${QUALITY_RESULT}" = success
 test "${SECRETS_RESULT}" = success

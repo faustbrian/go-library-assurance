@@ -7,9 +7,10 @@ second tooling CLI. Ordinary library CI does not depend on its checks or release
 ## Current scenario
 
 [`scenarios/compatibility-consumer`](scenarios/compatibility-consumer) carries
-the eleven existing Go test files and exact dependency selections from Tools
-commit `47a291bfa957ed00e833b51cde867cc7b5bd831a`. Only the test module identity
-changes to `github.com/faustbrian/go-library-assurance/scenarios/compatibility-consumer`.
+the eleven Go test files originally relocated from Tools commit
+`47a291bfa957ed00e833b51cde867cc7b5bd831a`. The scenario module identity is
+`github.com/faustbrian/go-library-assurance/scenarios/compatibility-consumer`;
+current selections and dependency maintenance now belong to this repository.
 Its Go minimum remains 1.27.0; qualification uses Go 1.27.2.
 
 [`selection.json`](scenarios/compatibility-consumer/selection.json) is the sole
@@ -24,3 +25,6 @@ is required by this ownership change.
 
 See [SECURITY.md](SECURITY.md) for dependency/action inventories, selection-owned
 updates, scheduled advisory monitoring and shared incident-response ownership.
+
+See [SOURCE_DOCUMENTATION.md](SOURCE_DOCUMENTATION.md) for source ownership,
+composition proof limits and the generator-owned import inventory.

@@ -1,3 +1,8 @@
+// Package compatibilityconsumer_test checks selected public-library compositions
+// through finite in-memory fixtures and explicit collaborators. It does not own
+// library releases or replace library-local conformance, security, persistence,
+// and concurrent-use qualification. Dependency choices are maintained in
+// selection.json; consumer_test.go is a producer-owned import inventory.
 package compatibilityconsumer_test
 
 import (
@@ -99,6 +104,8 @@ func TestCapabilityV2PublishedIssuerBoundReusableGrantComposition(t *testing.T) 
 		t.Fatal("reusable grant acquired a bounded-use policy")
 	}
 	use := capability.Use{Issuer: "consumer-issuer", Audience: "consumer", Subject: "reader", Resource: "orders", Operation: "read"}
+	// Reusable grants keep store ownership optional; repeated use must not turn
+	// this nominal composition into a bounded-use reservation protocol.
 	for range 2 {
 		if err := grant.Authorize(use); err != nil {
 			t.Fatal("published exact reusable authorization failed")
@@ -135,6 +142,8 @@ func TestLocalizedV5PublishedAPIQueryV4Composition(t *testing.T) {
 		{"canonical", localizedquery.ExactValue, localizedquery.ExactPredicate},
 		{"retained", localizedquerylegacy.ExactValue, localizedquerylegacy.ExactPredicate},
 	} {
+		// Exact lookup must preserve present-empty text. Falling back here would
+		// silently change the predicate's meaning instead of reporting absence.
 		t.Run(adapter.name, func(t *testing.T) {
 			if value, present := adapter.value(text, english); !present || value.Type() != apiquery.TypeString || value.String() != "Hello" {
 				t.Fatal("exact localized value lost APIQuery v4 string semantics")
@@ -306,6 +315,8 @@ func TestMPTV2PublishedMemoryComposition(t *testing.T) {
 		t.Fatal(err)
 	}
 	input[0] = 'X'
+	// The trie snapshot and stored value have distinct ownership obligations:
+	// updating a new snapshot must neither mutate the old one nor retain input.
 	if _, err := original.Get(ctx, key); !errors.Is(err, mpt.ErrAbsentKey) {
 		t.Fatalf("Update changed original snapshot: %v", err)
 	}
@@ -494,8 +505,11 @@ func TestCalendarV2PublishedCivilDateComposition(t *testing.T) {
 	}
 }
 
+// idempotencyCompositionClock isolates acquire/complete/replay from elapsed
+// lease time; this fixture does not exercise expiration or takeover races.
 type idempotencyCompositionClock struct{}
 
+// Now keeps each nominal replay inside the same lease window without sleeping.
 func (idempotencyCompositionClock) Now() time.Time {
 	return time.Date(2026, time.October, 3, 0, 0, 0, 0, time.UTC)
 }
@@ -533,6 +547,8 @@ func TestIdempotencyV2PatchAcquireCompleteReplayComposition(t *testing.T) {
 		t.Fatalf("Complete() = %#v, %v", completed, err)
 	}
 	replay, err := service.Begin(ctx, request)
+	// A completed nominal request returns its saved result without granting a
+	// second execution. Crash recovery remains the store owner's responsibility.
 	if err != nil || replay.Execute || replay.Outcome != idempotency.OutcomeReplayed || !bytes.Equal(replay.Record.Result, want) {
 		t.Fatalf("Begin() replay = %#v, %v", replay, err)
 	}
@@ -578,6 +594,8 @@ func TestOpenRPCV2BuilderValidationAndCanonicalComposition(t *testing.T) {
 }
 
 func TestLogV2DefaultAndTrustedComposition(t *testing.T) {
+	// Trusted construction is a caller-selected disclosure boundary, not a
+	// formatting option: ordinary messages and attributes remain redacted.
 	for _, test := range []struct {
 		name    string
 		trusted bool

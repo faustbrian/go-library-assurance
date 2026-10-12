@@ -1,3 +1,5 @@
+// These scenarios check the OAS 3.1/JSON Schema bridge and bounded admission,
+// not complete specification conformance or real authentication providers.
 package compatibilityconsumer_test
 
 import (
@@ -16,6 +18,8 @@ import (
 
 func TestPublicOpenAPI2Composition(t *testing.T) {
 	const source = `{"openapi":"3.1.0","info":{"title":"public","version":"1"},"paths":{},"x-value":-0.0e+00}`
+	// The extension's number spelling deliberately distinguishes a retained
+	// source value from normalization through floating-point decoding.
 	value, err := parse.JSON(t.Context(), strings.NewReader(source), parse.DefaultLimits())
 	if err != nil {
 		t.Fatal(err)
@@ -84,6 +88,8 @@ func TestPublicOpenAPI2AuthorizationAdmission(t *testing.T) {
 		t.Fatalf("credential admission: %t, %v", ok, err)
 	}
 	malformed, err := parse.JSON(t.Context(), strings.NewReader(`[{},42]`), parse.DefaultLimits())
+	// An anonymous alternative must not short-circuit validation of the entire
+	// requirement set and hide a malformed alternative later in the input.
 	if err != nil {
 		t.Fatal(err)
 	}

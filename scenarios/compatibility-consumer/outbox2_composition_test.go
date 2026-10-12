@@ -1,3 +1,5 @@
+// These scenarios check typed outbox envelopes and adapter ownership without
+// dispatching webhooks, starting a relay or claiming transactional delivery.
 package compatibilityconsumer_test
 
 import (
@@ -93,6 +95,8 @@ func TestPublicOutbox2EventOutbox3Composition(t *testing.T) {
 		t.Fatal("published event envelope round trip changed")
 	}
 	envelope.Metadata[eventoutbox.MetadataMessageID] = "different-message"
+	// Metadata and encoded event identity must agree; accepting only one would
+	// let a transport wrapper name a different message than its payload.
 	if _, err := codec.Decode(envelope); !errors.Is(err, eventoutbox.ErrEnvelopeCorrupt) {
 		t.Fatalf("inconsistent envelope identity accepted: %v", err)
 	}

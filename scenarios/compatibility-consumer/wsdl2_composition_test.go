@@ -1,3 +1,5 @@
+// These scenarios check one WSDL 1.1 round trip, bounded/canceled operations and
+// default error privacy; imported generators are not executed or qualified here.
 package compatibilityconsumer_test
 
 import (
@@ -52,6 +54,7 @@ func TestPublicWSDL2Composition(t *testing.T) {
 	if result, err := compiler.Compile(ctx, compile.Source{URI: "urn:inventory", Content: source}); result != nil || !errors.Is(err, context.Canceled) {
 		t.Fatalf("canceled compiler: %v %v", result, err)
 	}
+	// Cancellation belongs to an invocation, not the reusable compiler value.
 	if result, err := compiler.Compile(context.Background(), compile.Source{URI: "urn:inventory", Content: source}); result == nil || err != nil {
 		t.Fatalf("compiler reuse: %v %v", result, err)
 	}

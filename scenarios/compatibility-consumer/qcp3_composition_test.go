@@ -1,3 +1,5 @@
+// This static-access scenario uses synthetic credentials and an in-process
+// handler; it makes no workload changes or real control-plane service calls.
 package compatibilityconsumer_test
 
 import (
@@ -48,6 +50,8 @@ func TestPublicStaticAccessAndAdministrativeComposition(t *testing.T) {
 		t.Fatalf("administrative handler: %v", err)
 	}
 	for _, tc := range []struct {
+		// Missing credentials remain anonymous rather than an authentication
+		// failure; the API authorizer still denies access to the protected target.
 		name, secret          string
 		wantStatus, wantCalls int
 	}{

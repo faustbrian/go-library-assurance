@@ -1,3 +1,5 @@
+// These scenarios preserve canonical/retained codec interoperability and owned
+// output values without claiming every Wire format or parser edge is qualified.
 package compatibilityconsumer_test
 
 import (
@@ -28,6 +30,8 @@ import (
 )
 
 func TestWire3PublishedLocalized5Composition(t *testing.T) {
+	// Retained facades must preserve bytes, error identity and present-empty
+	// locales, not merely produce values accepted by their own decoder.
 	value, err := localized.TextFromMap(map[string]string{"EN-us": "Hello", "fi": ""})
 	if err != nil {
 		t.Fatal(err)

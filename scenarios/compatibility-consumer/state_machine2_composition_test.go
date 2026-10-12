@@ -1,3 +1,5 @@
+// These scenarios keep finite effect admission separate from durable execution
+// and database ownership; imported adapters are not live infrastructure proof.
 package compatibilityconsumer_test
 
 import (
@@ -15,13 +17,17 @@ import (
 	_ "github.com/faustbrian/go-state-machine/v2/statemachinetest"
 )
 
+// stateMachineCollaborator observes synchronous effect/record side effects.
+// Its plain counters are intentionally sequential, not concurrency-safe stores.
 type stateMachineCollaborator struct{ handled, recorded int }
 
+// Handle records whether whole-plan admission allowed an effect to reach a sink.
 func (c *stateMachineCollaborator) Handle(context.Context, sm.Effect) error {
 	c.handled++
 	return nil
 }
 
+// Record counts runner outcomes without persisting or replaying execution state.
 func (c *stateMachineCollaborator) Record(context.Context, runner.Record) error {
 	c.recorded++
 	return nil
@@ -36,6 +42,8 @@ func TestPublicStateMachineV2RunnerContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, effects := range [][]sm.Effect{
+		// Every allowance applies before the first collaborator call. Per-effect
+		// checks alone would permit earlier effects from a later-invalid plan.
 		{{Kind: "a"}, {Kind: "b"}, {Kind: "c"}},
 		{{Kind: "a", Payload: []byte("abc")}},
 		{{Kind: "a", Payload: []byte("ab")}, {Kind: "b", Payload: []byte("cd")}},

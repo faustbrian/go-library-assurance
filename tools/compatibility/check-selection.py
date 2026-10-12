@@ -27,6 +27,8 @@ ASSURANCE_HEADER = "module github.com/faustbrian/go-library-assurance/scenarios/
 
 
 def fetch_verified(url, digest, limit, *, open_url=None, deadline=None):
+    # Keep each response private until its full digest passes. The injected opener
+    # models transport for refusal tests; callers own its trust and timing behavior.
     # No credentials, ambient proxy credentials, mutable refs or cached fallback.
     deadline = time.monotonic() + 90 if deadline is None else deadline
     remaining = deadline - time.monotonic()
@@ -80,6 +82,8 @@ def decode_json(body):
 
 
 def load_inputs():
+    # All downloads share one budget. A helper with correct syntax but the wrong
+    # bytes cannot reach compile/exec, and catalog assets cannot fall back to cache.
     deadline = time.monotonic() + 90
     source = fetch_verified(HELPER_URL, HELPER_SHA256, 1024 * 1024, deadline=deadline)
     assets = {
@@ -101,6 +105,8 @@ def load_inputs():
 
 
 def validate_selection(inputs, selection, go_mod, test_source):
+    # Only the module identity is adapted. Imports remain exact renderer bytes;
+    # adding a manual comment or allowing a second selection source would drift.
     helper, sets, catalogs = inputs
     selected, catalogs = helper.current_consumer_inputs(
         sets, catalogs, selection, verify_public=False,
@@ -117,6 +123,8 @@ def validate_selection(inputs, selection, go_mod, test_source):
 
 
 def read_owned(name, limit):
+    # Admit bounded regular input from a stable checkout. These checks precede
+    # open but do not provide an atomic snapshot against concurrent replacement.
     directory = ROOT / "scenarios/compatibility-consumer"
     for parent in (ROOT / "scenarios", directory):
         if not stat.S_ISDIR(parent.lstat().st_mode):

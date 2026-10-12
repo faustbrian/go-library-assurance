@@ -1,3 +1,5 @@
+// This fixture checks one shared XLSX input against published historical/current
+// Tabular APIs. It is dependency composition proof, not an OOXML conformance set.
 package compatibilityconsumer_test
 
 import (
@@ -16,6 +18,8 @@ func TestPublishedTabularMajorsDecodeXLSXWithPatchedExcelize(t *testing.T) {
 	var buffer bytes.Buffer
 	archive := zip.NewWriter(&buffer)
 	for _, part := range []struct{ name, content string }{
+		// Build the smallest workbook relationships needed by the same reader
+		// operation in both majors; fixture strings are executable corpus bytes.
 		{"[Content_Types].xml", `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`},
 		{"_rels/.rels", `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
 		{"xl/workbook.xml", `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>`},
@@ -36,6 +40,8 @@ func TestPublishedTabularMajorsDecodeXLSXWithPatchedExcelize(t *testing.T) {
 	data := buffer.Bytes()
 	check := func(t *testing.T, read func() ([]string, error), closeReader func() error) {
 		t.Helper()
+		// A failed row assertion still owes the reader cleanup; ownership belongs
+		// to the subtest that opened it, not the shared archive fixture.
 		t.Cleanup(func() {
 			if err := closeReader(); err != nil {
 				t.Error(err)

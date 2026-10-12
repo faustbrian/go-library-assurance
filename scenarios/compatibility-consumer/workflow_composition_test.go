@@ -1,3 +1,5 @@
+// These scenarios compose workflow values and one direct activity invocation;
+// they do not start orchestration workers or establish durable replay behavior.
 package compatibilityconsumer_test
 
 import (
@@ -33,6 +35,8 @@ func TestCloudEventsWorkflowV2PublishedHistoryComposition(t *testing.T) {
 		t.Fatalf("ToCloudEvent() = %#v, %v", report, err)
 	}
 	wantState := workflowevents.State{StableID: "event-1", Sequence: 1, Definition: reference}
+	// CloudEvents carries portable fields; sequence/definition stay in the
+	// explicit side state so a reverse conversion need not invent workflow data.
 	if state != wantState {
 		t.Fatalf("ToCloudEvent() lost workflow-owned state: %#v", state)
 	}
@@ -54,6 +58,8 @@ func TestCloudEventsWorkflowV2PublishedHistoryComposition(t *testing.T) {
 		!bytes.Equal(roundTrip.Data(), []byte("body")) {
 		t.Fatalf("FromCloudEvent() lost nominal history: %#v, %v", roundTrip, err)
 	}
+	// A portable source has no history-model destination and must remain a
+	// declared loss rather than being silently added to the history payload.
 	if len(reverseReport.Losses) != 1 || reverseReport.Losses[0].Field != "source" ||
 		reverseReport.Losses[0].Reason != "not represented by workflow history" {
 		t.Fatalf("FromCloudEvent() lost explicit source loss: %#v", reverseReport)
