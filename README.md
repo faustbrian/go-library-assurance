@@ -21,3 +21,6 @@ Shared security authority and historical catalog publication also remain Tools.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the public-input bootstrap and
 qualification boundary. No harness version, module release or library repinning
 is required by this ownership change.
+
+See [SECURITY.md](SECURITY.md) for dependency/action inventories, selection-owned
+updates, scheduled advisory monitoring and shared incident-response ownership.

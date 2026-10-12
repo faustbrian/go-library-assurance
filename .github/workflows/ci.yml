@@ -56,6 +56,7 @@ jobs:
           python3 tools/compatibility/check-selection.py
           python3 -m unittest discover -s tools/compatibility -p test_selection.py
           python3 -m unittest discover -s .github/scripts -p test_required.py
+          python3 -m unittest discover -s .github/scripts -p test_advisory.py
       - name: Select affected public scenarios
         id: scope
         env:

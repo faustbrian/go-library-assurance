@@ -86,3 +86,25 @@ helper source named in the workflow; they are not copied into this repository.
 The scenario module is not released or imported by ordinary libraries.
 Library-local test/security/release obligations remain with their owners;
 Tools retains generic verification and historical catalog/security authority.
+
+## Dependency maintenance
+
+The single [Dependabot configuration](.github/dependabot.yml) updates actions and
+only indirect scenario modules. Direct updates must change `selection.json`
+alongside the generated direct `go.mod` requirements/imports; a go.mod-only
+direct bump is intentionally rejected. Review versions, source identity,
+retractions and module provenance before accepting either kind of update.
+
+The separate scheduled/manual [advisory monitor](.github/workflows/advisories.yml)
+refreshes the selected Go graph against current advisories without running
+compositions. Its shell boundary is covered by process-double tests (not live
+Go vulnerability evidence):
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+actionlint
+```
+
+See [SECURITY.md](SECURITY.md) for scanner ownership, inventory sources and
+compromise response. This harness remains non-releasable; these maintenance
+changes do not require module tags, changelogs or downstream library repins.
