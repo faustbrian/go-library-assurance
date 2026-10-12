@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assurance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: low
+          license-check: true
+          vulnerability-check: true
+          warn-only: false
+
+  quality:
+    name: Selection and scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      required: ${{ steps.scope.outputs.required }}
+      files: ${{ steps.scope.outputs.files }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: faustbrian/go-library-tools
+          ref: aad911ea1853bb950f04bab586a4ae6497a0f49a
+          path: .tools
+          persist-credentials: false
+      - name: Check current selection and refusal behavior
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python3 tools/compatibility/check-selection.py
+          python3 -m unittest discover -s tools/compatibility -p test_selection.py
+          python3 -m unittest discover -s .github/scripts -p test_required.py
+      - name: Select affected public scenarios
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          PUBLICATION_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+          CONSUMER_DIRECTORY: scenarios/compatibility-consumer
+        run: python3 .tools/.github/scripts/select-compatibility-consumer.py
+
+  secrets:
+    name: Changed-content secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Scan changed contents with the pinned standard scanner
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before || github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          task="$(mktemp -d "${RUNNER_TEMP}/assurance-secrets.XXXXXX")"
+          cleanup() {
+            local status=$?
+            trap - EXIT
+            chmod -R u+w "${task}" || status=1
+            find "${task}" -depth -delete || status=1
+            exit "${status}"
+          }
+          trap cleanup EXIT
+          # Same scanner version as Tools, without compiling it for every change.
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 90 --max-filesize 16777216 \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            --output "${task}/scanner.tar.gz"
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  scanner.tar.gz' | \
+            (cd "${task}" && sha256sum --check --strict)
+          tar -xzf "${task}/scanner.tar.gz" -C "${task}" gitleaks
+          test -f "${task}/gitleaks" && test ! -L "${task}/gitleaks"
+          # Never let checkout .gitleaks.toml or config environment suppress rules.
+          printf '[extend]\nuseDefault=true\n' >"${task}/scanner.toml"
+          [[ "${BASE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          git cat-file -e "${BASE_SHA}^{commit}"
+          git merge-base --is-ancestor "${BASE_SHA}" HEAD
+          if test "${EVENT_NAME}" = workflow_dispatch; then
+            "${task}/gitleaks" dir . --config "${task}/scanner.toml" --redact --no-banner --ignore-gitleaks-allow --gitleaks-ignore-path /dev/null
+          else
+            "${task}/gitleaks" git . --config "${task}/scanner.toml" --log-opts="${BASE_SHA}..HEAD" --redact --no-banner --ignore-gitleaks-allow --gitleaks-ignore-path /dev/null
+          fi
+
+  scenarios:
+    name: Public compositions (${{ matrix.platform }})
+    if: needs.quality.outputs.required == 'true'
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: darwin-arm64
+            runner: macos-latest
+            goos: darwin
+            goarch: arm64
+          - platform: linux-amd64
+            runner: ubuntu-24.04
+            goos: linux
+            goarch: amd64
+          - platform: linux-arm64
+            runner: ubuntu-24.04-arm
+            goos: linux
+            goarch: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: faustbrian/go-library-tools
+          ref: aad911ea1853bb950f04bab586a4ae6497a0f49a
+          path: .tools
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .go-version
+          cache: false
+      - name: Resolve and test selected public compositions
+        env:
+          CONSUMER_DIRECTORY: scenarios/compatibility-consumer
+          SCENARIO_FILES: ${{ needs.quality.outputs.files }}
+          EXPECTED_GOOS: ${{ matrix.goos }}
+          EXPECTED_GOARCH: ${{ matrix.goarch }}
+        run: bash .tools/.github/scripts/run-compatibility-consumer.sh
+
+  required:
+    name: Required
+    if: always()
+    needs: [dependency-review, quality, secrets, scenarios]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - env:
+          EVENT_NAME: ${{ github.event_name }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          SECRETS_RESULT: ${{ needs.secrets.result }}
+          SCENARIOS_REQUIRED: ${{ needs.quality.outputs.required }}
+          SCENARIOS_RESULT: ${{ needs.scenarios.result }}
+          DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
+        run: bash .github/scripts/check-required.sh
