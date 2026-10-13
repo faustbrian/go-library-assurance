@@ -28,3 +28,8 @@ updates, scheduled advisory monitoring and shared incident-response ownership.
 
 See [SOURCE_DOCUMENTATION.md](SOURCE_DOCUMENTATION.md) for source ownership,
 composition proof limits and the generator-owned import inventory.
+
+## Ecosystem navigation
+
+See the [versioned Golib ecosystem index](https://github.com/faustbrian/go-library-tools/blob/v1.8.4/docs/ecosystem/README.md) for package
+selection, explicit ownership, and compatibility guidance.
