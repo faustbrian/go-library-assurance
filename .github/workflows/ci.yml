@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: faustbrian/go-library-tools
-          ref: aad911ea1853bb950f04bab586a4ae6497a0f49a
+          ref: 09b43f49385650c44dd4151a12b0877ca6b48a88
           path: .tools
           persist-credentials: false
       - name: Check current selection and refusal behavior
@@ -77,17 +77,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: faustbrian/go-library-tools
-          ref: 0e8ff6fee42e88858069a6f6ae6f1080d95c5eae
+          ref: 09b43f49385650c44dd4151a12b0877ca6b48a88
           path: .golib-tooling
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: '1.27.2'
           cache: false
-      - uses: faustbrian/go-library-tools/.github/actions/setup-golib@e8c0c51cc517dfede5475858bb417f0e7a21f39d
+      - uses: faustbrian/go-library-tools/.github/actions/setup-golib@09b43f49385650c44dd4151a12b0877ca6b48a88
         with:
           source_bootstrap: 'true'
-          tooling_sha: 0e8ff6fee42e88858069a6f6ae6f1080d95c5eae
+          tooling_sha: 09b43f49385650c44dd4151a12b0877ca6b48a88
       - name: Check tracked source documentation without framework metadata
         run: golib source-docs check --json
       - name: Remove exact owned source bootstrap workspace
@@ -167,7 +167,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: faustbrian/go-library-tools
-          ref: aad911ea1853bb950f04bab586a4ae6497a0f49a
+          ref: 09b43f49385650c44dd4151a12b0877ca6b48a88
           path: .tools
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
