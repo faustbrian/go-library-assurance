@@ -56,6 +56,12 @@ arm64, Linux amd64 and Linux arm64. This is not a promise for every Go patch or
 for independently minimized dependency versions; unexecuted platforms remain
 unverified.
 
+The separate default-off `release_integrity` dispatch produces retrospective
+SBOM/inventory evidence for the fixed repaired JSONAPI and Localized releases,
+and authenticates/rebuilds all four Tools v2.5.1 binary distributions on Linux
+amd64. It retains evidence without creating or amending a release; see the
+[bounded recipe and claim limits](CONTRIBUTING.md#fixed-release-integrity-recipe).
+
 [`selection.json`](scenarios/compatibility-consumer/selection.json) is the sole
 editable current selection. Historical compatibility sets and catalogs remain
 immutable Tools release inputs, not a second maintained catalog here. Generic

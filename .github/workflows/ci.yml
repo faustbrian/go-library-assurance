@@ -11,6 +11,11 @@ on:
         type: boolean
         required: false
         default: false
+      release_integrity:
+        description: Retrospective fixed release inventories and Tools 2.5.1 byte reproduction
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -64,6 +69,7 @@ jobs:
           python3 -m unittest discover -s .github/scripts -p test_required.py
           python3 -m unittest discover -s .github/scripts -p test_source_cleanup.py
           python3 -m unittest discover -s .github/scripts -p test_advisory.py
+          python3 -m unittest discover -s .github/scripts -p test_release_integrity.py
       - name: Select affected public scenarios
         id: scope
         env:
@@ -258,10 +264,73 @@ jobs:
           go mod verify
           shasum -a 256 -c "${task}/module-files.sha256"
 
+  release-integrity:
+    name: Fixed release integrity
+    if: github.event_name == 'workflow_dispatch' && inputs.release_integrity
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      attestations: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.2'
+          cache: false
+      - name: Install immutable public attestation client
+        id: github-cli
+        run: |
+          set -euo pipefail
+          task="$(mktemp -d "${RUNNER_TEMP}/assurance-release-cli.XXXXXX")"
+          printf 'directory=%s\n' "${task}" >>"${GITHUB_OUTPUT}"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+            --connect-timeout 15 --max-time 120 --max-filesize 67108864 \
+            https://github.com/cli/cli/releases/download/v2.102.0/gh_2.102.0_linux_amd64.tar.gz \
+            --output "${task}/client.tar.gz"
+          echo 'bb766f710eef8ede859c18578c72c327597cd4c8a85b06001b1f3843c6019386  client.tar.gz' | \
+            (cd "${task}" && sha256sum --check --strict)
+          tar -xzf "${task}/client.tar.gz" -C "${task}" gh_2.102.0_linux_amd64/bin/gh
+          echo "${task}/gh_2.102.0_linux_amd64/bin" >>"${GITHUB_PATH}"
+      - name: Qualify the fixed immutable release inputs
+        id: recipe
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/qualify-release-integrity.sh
+      - name: Retain retrospective inventories and byte-comparison evidence
+        if: always() && steps.recipe.outputs.evidence != ''
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: fixed-release-integrity
+          path: ${{ steps.recipe.outputs.evidence }}
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove exact owned evidence and attestation client
+        if: always()
+        env:
+          CLI_DIRECTORY: ${{ steps.github-cli.outputs.directory }}
+          EVIDENCE_DIRECTORY: ${{ steps.recipe.outputs.evidence }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${CLI_DIRECTORY}" ]]; then
+            [[ "${CLI_DIRECTORY}" == "${RUNNER_TEMP}/assurance-release-cli."* ]]
+            test -d "${CLI_DIRECTORY}" && test ! -L "${CLI_DIRECTORY}"
+            chmod -R u+w "${CLI_DIRECTORY}"
+            find "${CLI_DIRECTORY}" -depth -delete
+          fi
+          if [[ -n "${EVIDENCE_DIRECTORY}" ]]; then
+            test "${EVIDENCE_DIRECTORY}" = "${RUNNER_TEMP}/assurance-release-integrity-evidence"
+            test -d "${EVIDENCE_DIRECTORY}" && test ! -L "${EVIDENCE_DIRECTORY}"
+            find "${EVIDENCE_DIRECTORY}" -depth -delete
+          fi
+
   required:
     name: Required
     if: always()
-    needs: [dependency-review, quality, secrets, source-docs, scenarios, minimum-compiler]
+    needs: [dependency-review, quality, secrets, source-docs, scenarios, minimum-compiler, release-integrity]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -278,4 +347,6 @@ jobs:
           DEPENDENCY_REVIEW_RESULT: ${{ needs.dependency-review.result }}
           MINIMUM_COMPILER_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.minimum_compiler && 'true' || 'false' }}
           MINIMUM_COMPILER_RESULT: ${{ needs.minimum-compiler.result }}
+          RELEASE_INTEGRITY_REQUIRED: ${{ github.event_name == 'workflow_dispatch' && inputs.release_integrity && 'true' || 'false' }}
+          RELEASE_INTEGRITY_RESULT: ${{ needs.release-integrity.result }}
         run: bash .github/scripts/check-required.sh

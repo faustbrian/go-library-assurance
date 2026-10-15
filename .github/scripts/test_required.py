@@ -14,7 +14,8 @@ class RequiredTests(unittest.TestCase):
                            SECRETS_RESULT="success", SOURCE_DOCS_RESULT="success",
                            SCENARIOS_REQUIRED="false",
                            SCENARIOS_RESULT="skipped", DEPENDENCY_REVIEW_RESULT="skipped",
-                           MINIMUM_COMPILER_REQUIRED="false", MINIMUM_COMPILER_RESULT="skipped")
+                           MINIMUM_COMPILER_REQUIRED="false", MINIMUM_COMPILER_RESULT="skipped",
+                           RELEASE_INTEGRITY_REQUIRED="false", RELEASE_INTEGRITY_RESULT="skipped")
         for key, value in updates.items():
             if value is None:
                 environment.pop(key, None)
@@ -87,6 +88,25 @@ class RequiredTests(unittest.TestCase):
             if event == "pull_request":
                 updates["DEPENDENCY_REVIEW_RESULT"] = "success"
             self.check(updates, False)
+
+    def test_release_integrity_is_manual_and_fail_closed(self):
+        selected = {"EVENT_NAME": "workflow_dispatch", "RELEASE_INTEGRITY_REQUIRED": "true"}
+        self.check(dict(selected, RELEASE_INTEGRITY_RESULT="success"), True)
+        for result in ("failure", "cancelled", "skipped", "", "unknown", None):
+            with self.subTest(result=result):
+                self.check(dict(selected, RELEASE_INTEGRITY_RESULT=result), False)
+        for value in ("", "TRUE", "unknown", None):
+            with self.subTest(value=value):
+                self.check({"RELEASE_INTEGRITY_REQUIRED": value}, False)
+        for event in ("push", "pull_request", "workflow_dispatch"):
+            baseline = {"EVENT_NAME": event}
+            if event == "pull_request":
+                baseline["DEPENDENCY_REVIEW_RESULT"] = "success"
+            self.check(baseline, True)
+            for result in ("success", "failure", "cancelled", "", None):
+                self.check(dict(baseline, RELEASE_INTEGRITY_RESULT=result), False)
+            if event != "workflow_dispatch":
+                self.check(dict(baseline, RELEASE_INTEGRITY_REQUIRED="true", RELEASE_INTEGRITY_RESULT="success"), False)
 
 
 if __name__ == "__main__":

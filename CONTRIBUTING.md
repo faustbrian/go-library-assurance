@@ -128,6 +128,33 @@ does not tidy, repin or raise the floor to obtain a pass. Failures remain eviden
 against that selected compiler/platform claim. It does not qualify every patch
 compiler or a separately minimized dependency graph.
 
+## Fixed release-integrity recipe
+
+The default-off manual CI input `release_integrity` selects one serial Ubuntu
+24.04/Go 1.27.2 job. It authenticates the public Tools v2.5.1 checksums, manifest
+and four distribution archives through GitHub attestations bound to its release
+workflow, tag and source `09b43f49385650c44dd4151a12b0877ca6b48a88`. Independent
+builds use that exact source and release flags, then its existing `release package`
+and `release archive-check` commands compare both binary and archive bytes for
+Linux/Darwin amd64/arm64. These are cross-builds on Linux amd64, not native
+execution on all four targets or a universal cross-environment promise.
+
+The same recipe produces retrospective CycloneDX 1.6 SBOMs and module inventories
+for JSONAPI/v2 v2.0.1 at `6f44f8b7cd089d36bc36e67e6aec38faa5ad1aa0` and
+Localized/v5 v5.0.2 at `534315549084994f3d2a2e088400ddc2bf3a6b68`, using public
+authenticated modules and `cyclonedx-gomod@v1.12.0`. Expected release identity is
+recorded separately from the generator's untouched root-version autodetection.
+The evidence is not an original release-pipeline SBOM or an assertion of SBOM
+byte reproducibility. No release is created or amended.
+
+Readonly module execution rejects replacement graphs, checks Origin/sums and
+preserves source `go.mod`/`go.sum` hashes without tidying. Private caches and
+downloads are removed; the 30-day `fixed-release-integrity` artifact retains
+environment, authentication results, module graphs, SBOMs, source/root metadata,
+digests, comparisons and exit status, including partial failure evidence.
+Required fails for any selected failed, cancelled, skipped or missing job.
+Publication and deployment are outside this recipe.
+
 ## Dependency maintenance
 
 The single [Dependabot configuration](.github/dependabot.yml) updates actions and
