@@ -109,6 +109,25 @@ The scenario module is not released or imported by ordinary libraries.
 Library-local test/security/release obligations remain with their owners;
 Tools retains generic verification and historical catalog/security authority.
 
+### Declared minimum compiler
+
+CI's optional `minimum_compiler` manual-dispatch input defaults to false. When
+selected, all three native platforms also use exact Go 1.27.0 to test the entire
+current selected public module, including its import inventory and composition
+contracts. Required rejects failed, cancelled, skipped or missing selected
+minimum-compiler work; when unselected, that work must remain skipped. The
+ordinary Go 1.27.2 qualification is unchanged.
+
+This bounded scenario uses direct Go commands rather than the shared Tools
+runner, whose current qualification contract requires Go 1.27.2 and tidies a
+disposable copy. Minimum-compiler qualification instead disables automatic
+toolchain/workspace selection, requires public authenticated module resolution,
+rejects replacements and runs readonly tests with private cleaned caches. It
+checks the declared 1.27.0 floor and unchanged checked-in `go.mod`/`go.sum`; it
+does not tidy, repin or raise the floor to obtain a pass. Failures remain evidence
+against that selected compiler/platform claim. It does not qualify every patch
+compiler or a separately minimized dependency graph.
+
 ## Dependency maintenance
 
 The single [Dependabot configuration](.github/dependabot.yml) updates actions and

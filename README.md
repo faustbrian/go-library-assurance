@@ -49,7 +49,12 @@ the eleven Go test files originally relocated from Tools commit
 `47a291bfa957ed00e833b51cde867cc7b5bd831a`. The scenario module identity is
 `github.com/faustbrian/go-library-assurance/scenarios/compatibility-consumer`;
 current selections and dependency maintenance now belong to this repository.
-Its Go minimum remains 1.27.0; qualification uses Go 1.27.2.
+Its Go minimum remains 1.27.0; ordinary qualification uses Go 1.27.2.
+Manual CI dispatch can additionally select `minimum_compiler` to qualify the
+unchanged current public dependency graph on native Go 1.27.0 across Darwin
+arm64, Linux amd64 and Linux arm64. This is not a promise for every Go patch or
+for independently minimized dependency versions; unexecuted platforms remain
+unverified.
 
 [`selection.json`](scenarios/compatibility-consumer/selection.json) is the sole
 editable current selection. Historical compatibility sets and catalogs remain

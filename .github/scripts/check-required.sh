@@ -10,6 +10,14 @@ case "${SCENARIOS_REQUIRED}" in
   false) test "${SCENARIOS_RESULT}" = skipped ;;
   *) exit 1 ;;
 esac
+case "${MINIMUM_COMPILER_REQUIRED}" in
+  true)
+    test "${EVENT_NAME}" = workflow_dispatch
+    test "${MINIMUM_COMPILER_RESULT}" = success
+    ;;
+  false) test "${MINIMUM_COMPILER_RESULT}" = skipped ;;
+  *) exit 1 ;;
+esac
 case "${EVENT_NAME}" in
   pull_request) test "${DEPENDENCY_REVIEW_RESULT}" = success ;;
   push|workflow_dispatch) test "${DEPENDENCY_REVIEW_RESULT}" = skipped ;;
