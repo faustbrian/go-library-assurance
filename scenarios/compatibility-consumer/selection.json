@@ -585,8 +585,8 @@
     {
       "alongside_module_path": "github.com/faustbrian/go-localized",
       "module_path": "github.com/faustbrian/go-localized/v5",
-      "version": "v5.0.0",
-      "source_revision": "c56b9eff3228ad7c974e87f9e6b8d6bfe1d56479",
+      "version": "v5.0.2",
+      "source_revision": "534315549084994f3d2a2e088400ddc2bf3a6b68",
       "primary_entry_packages": ["github.com/faustbrian/go-localized/v5"]
     },
     {
@@ -613,8 +613,8 @@
     {
       "alongside_module_path": "github.com/faustbrian/go-jsonapi",
       "module_path": "github.com/faustbrian/go-jsonapi/v2",
-      "version": "v2.0.0",
-      "source_revision": "41700010871799526a9dcfd7e96affe98bdecbba",
+      "version": "v2.0.1",
+      "source_revision": "6f44f8b7cd089d36bc36e67e6aec38faa5ad1aa0",
       "primary_entry_packages": ["github.com/faustbrian/go-jsonapi/v2"]
     },
     {

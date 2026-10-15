@@ -280,8 +280,8 @@ github.com/faustbrian/go-json-schema/v2 v2.0.0 h1:88kzwDCcP8Xo3SaDyUzc6oWtl83id9
 github.com/faustbrian/go-json-schema/v2 v2.0.0/go.mod h1:ikxluAloOz0MuH7up4K9tIpKVGO/Y8z72wQ/hpvwHn4=
 github.com/faustbrian/go-jsonapi v1.0.0 h1:ymGBAgeuwY9YspXTenGbirRcgef9Bw2dYfuRGqsR/UM=
 github.com/faustbrian/go-jsonapi v1.0.0/go.mod h1:7XH8Rh5yh1Uj5fJx2azY9XMM8/YdQkGbETVn6RYSkGM=
-github.com/faustbrian/go-jsonapi/v2 v2.0.0 h1:4CFe9HA28DxRSN+H3eAMjgfe637WXzvCNUyAn3+WJQ0=
-github.com/faustbrian/go-jsonapi/v2 v2.0.0/go.mod h1:MV6Dr+s3ii1yQK/FIZ9Z861Z+7ToQhiuxvZssu1nSEY=
+github.com/faustbrian/go-jsonapi/v2 v2.0.1 h1:6kfqQ3swtoHvKcaHVqftn6YnakRxkxWFl7K7BvMKSjc=
+github.com/faustbrian/go-jsonapi/v2 v2.0.1/go.mod h1:MV6Dr+s3ii1yQK/FIZ9Z861Z+7ToQhiuxvZssu1nSEY=
 github.com/faustbrian/go-jsonrpc v1.0.0 h1:iQ/YxMkjKBlWyTPCYxQzuBBIV/73ImYWKNVGG7hZr8s=
 github.com/faustbrian/go-jsonrpc v1.0.0/go.mod h1:gdYA/wi8eAeptM4Lf9qwPA6eImChPa2Ng9/+/UvpOPQ=
 github.com/faustbrian/go-kafka v1.1.0 h1:1NjBMvJPvXPyJSvXUFLQDxkjSlwsyKRC2kMAgdxJt2A=
@@ -304,8 +304,8 @@ github.com/faustbrian/go-localized v1.1.0 h1:tiGhWePsCTk+zXX1tkXm2D6AXcP37ag08DR
 github.com/faustbrian/go-localized v1.1.0/go.mod h1:0HcuHameLTUYwPWKTmfUGT6AW/PHdnxpEhqxvdzMRD0=
 github.com/faustbrian/go-localized/v3 v3.0.0 h1:nphviUA7uZssvrvBjAXvCW8gKkN/qdyRmpJoyXk32EU=
 github.com/faustbrian/go-localized/v3 v3.0.0/go.mod h1:M6tAwPOcihEN3fGP+xykyEQlHvKqdrs+87JgJ68Pa8Q=
-github.com/faustbrian/go-localized/v5 v5.0.0 h1:xFehCNsA9pcZxk90awGAtVrJVYm9bwkPwKk5p2hHZ4A=
-github.com/faustbrian/go-localized/v5 v5.0.0/go.mod h1:tnQlj1cAbCt0tc0JpAfxkbd/G6RHVUBPGjUoxx14m2Q=
+github.com/faustbrian/go-localized/v5 v5.0.2 h1:gTAPWcue3YTBZtHKNLAe4hwBSr8U4TecrXOFhz1nPa0=
+github.com/faustbrian/go-localized/v5 v5.0.2/go.mod h1:tnQlj1cAbCt0tc0JpAfxkbd/G6RHVUBPGjUoxx14m2Q=
 github.com/faustbrian/go-log/v2 v2.0.0 h1:VQIEvZfXXEYXoTeavlEeMT1YtinFV1KDFAMyNhixQ7o=
 github.com/faustbrian/go-log/v2 v2.0.0/go.mod h1:FJ34JaICS4Lda+67LUgNp4e4S3y2GBl0l3UsvIqrVFY=
 github.com/faustbrian/go-math v1.1.2 h1:cH0VSYu/u6Xwc/NGDwbEUQEKpvIjNFOH/suiFIBLHbI=
