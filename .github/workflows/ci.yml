@@ -96,7 +96,7 @@ jobs:
         with:
           go-version: '1.27.2'
           cache: false
-      - uses: faustbrian/go-library-tools/.github/actions/setup-golib@09b43f49385650c44dd4151a12b0877ca6b48a88
+      - uses: faustbrian/go-library-tools/.github/actions/setup-golib@ef9ae418c61b6b92d8d93c03d71694031ec47ed8
         with:
           source_bootstrap: 'true'
           tooling_sha: 09b43f49385650c44dd4151a12b0877ca6b48a88
